@@ -14,6 +14,8 @@ from avod.core import summary_utils
 from avod.core.anchor_generators import grid_anchor_3d_generator
 from avod.datasets.kitti import kitti_aug
 
+from avod.core.feature_extractors.bev_img_senet import SeModule
+
 
 class RpnModel(model.DetectionModel):
     ##############################
@@ -111,6 +113,11 @@ class RpnModel(model.DetectionModel):
         self._img_feature_extractor = \
             feature_extractor_builder.get_extractor(
                 self._config.layers_config.img_feature_extractor)
+
+        # Feature SENet
+        self._bev_img_SEnet = SeModule(ratio=4)
+
+        # todo add attention for bev and img feature
 
         # Network input placeholders
         self.placeholders = dict()
@@ -236,17 +243,52 @@ class RpnModel(model.DetectionModel):
         bottlenecks as member variables.
         """
 
-        self.bev_feature_maps, self.bev_end_points = \
+        self.bev_feature_maps_org, self.bev_end_points = \
             self._bev_feature_extractor.build(
                 self._bev_preprocessed,
                 self._bev_pixel_size,
                 self._is_training)
 
-        self.img_feature_maps, self.img_end_points = \
+        self.img_feature_maps_org, self.img_end_points = \
             self._img_feature_extractor.build(
                 self._img_preprocessed,
                 self._img_pixel_size,
                 self._is_training)
+
+        # todo apply attention for bev and img feature
+        # input is bev_feature_maps contacted with img_feature_maps
+        # max pooling + fc ?
+        self.bev_feature_maps, self.img_feature_maps = \
+            self._bev_img_SEnet.build(
+                self.bev_feature_maps_org,
+                self.img_feature_maps_org)
+
+        # with tf.variable_scope('bev_img_senet'):
+        #     ratio = 4
+        #     hb, wb, cb = tuple([dim.value for dim in self.bev_feature_maps_org.shape[1:4]])
+        #     hi, wi, ci = tuple([dim.value for dim in self.img_feature_maps_org.shape[1:4]])
+        #     c = int(cb) + int(ci)     # 32+32=64
+        #
+        #     self.bev_feature_line = slim.avg_pool2d(self.bev_feature_maps_org, [hb, wb], padding='valid')
+        #     self.img_feature_line = slim.avg_pool2d(self.img_feature_maps_org, [hi, wi], padding='valid')
+        #
+        #     excitation_bev = slim.flatten(self.bev_feature_line)
+        #     excitation_img = slim.flatten(self.img_feature_line)
+        #     excitation = tf.concat(
+        #         [excitation_bev, excitation_img], axis=-1)
+        #     excitation = slim.fully_connected(excitation, int(c/ratio), scope='se_fc1',
+        #                                       weights_regularizer=None,
+        #                                       weights_initializer=slim.xavier_initializer(),
+        #                                       activation_fn=tf.nn.relu)
+        #     excitation = slim.fully_connected(excitation, c, scope='se_fc2',
+        #                                       weights_regularizer=None,
+        #                                       weights_initializer=slim.xavier_initializer(),
+        #                                       activation_fn=tf.nn.sigmoid)
+        #     se_weight = tf.reshape(excitation, [-1, 1, 1, c])
+        #     bev_weight = se_weight[:,:,:,0:cb]
+        #     img_weight = se_weight[:,:,:,cb:]
+        #     self.bev_feature_maps = self.bev_feature_maps_org * bev_weight
+        #     self.img_feature_maps = self.img_feature_maps_org * img_weight
 
         with tf.variable_scope('bev_bottleneck'):
             self.bev_bottleneck = slim.conv2d(
@@ -266,16 +308,16 @@ class RpnModel(model.DetectionModel):
                 normalizer_params={
                     'is_training': self._is_training})
 
-        # # Visualize the end point feature maps being used
-        # for feature_map in list(self.bev_end_points.items()):
-        #     if 'conv' in feature_map[0]:
-        #         summary_utils.add_feature_maps_from_dict(self.bev_end_points,
-        #                                                  feature_map[0])
-        #
-        # for feature_map in list(self.img_end_points.items()):
-        #     if 'conv' in feature_map[0]:
-        #         summary_utils.add_feature_maps_from_dict(self.img_end_points,
-        #                                                  feature_map[0])
+        # Visualize the end point feature maps being used
+        for feature_map in list(self.bev_end_points.items()):
+            if 'conv' in feature_map[0]:
+                summary_utils.add_feature_maps_from_dict(self.bev_end_points,
+                                                         feature_map[0])
+
+        for feature_map in list(self.img_end_points.items()):
+            if 'conv' in feature_map[0]:
+                summary_utils.add_feature_maps_from_dict(self.img_end_points,
+                                                         feature_map[0])
 
     def build(self):
 

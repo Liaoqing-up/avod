@@ -364,10 +364,13 @@ class Evaluator:
                 self.model_config, self.model_name)
 
         ckpt_indices = np.asarray(self.eval_config.ckpt_indices)
+        # ckpt_indices = np.asarray([-1])
+        # print("ckpt_indices", ckpt_indices)
         if ckpt_indices is not None:
             if ckpt_indices[0] == -1:
                 # Restore the most recent checkpoint
                 ckpt_idx = num_checkpoints - 1
+                print("ckpt_idx", ckpt_idx)
                 ckpt_indices = [ckpt_idx]
             for ckpt_idx in ckpt_indices:
                 checkpoint_to_restore = self._saver.last_checkpoints[ckpt_idx]

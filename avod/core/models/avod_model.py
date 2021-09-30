@@ -185,6 +185,7 @@ class AvodModel(model.DetectionModel):
                     anchor_projector.reorder_projected_boxes(
                         img_proposal_boxes_norm)
 
+        #todo dpply attention to bev_feature_maps and img_feature_maps
         bev_feature_maps = rpn_model.bev_feature_maps
         img_feature_maps = rpn_model.img_feature_maps
 

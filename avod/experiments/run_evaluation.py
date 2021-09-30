@@ -79,6 +79,9 @@ def evaluate(model_config, eval_config, dataset_config):
                                     dataset_config,
                                     eval_config)
 
+        # print("evaluate_repeatedly", evaluate_repeatedly)
+        # evaluate_repeatedly = False
+        # print("evaluate_repeatedly", evaluate_repeatedly)
         if evaluate_repeatedly:
             model_evaluator.repeated_checkpoint_run()
         else:

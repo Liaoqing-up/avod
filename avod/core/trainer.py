@@ -82,9 +82,21 @@ def train(model, train_config):
             global_step=global_step_tensor)
 
     # Save checkpoints regularly.
+    #todo modify load weight
+    # exclude = ['se_fc1', 'se_fc2']
+    # exclude = ['bev_img_senet', 'train_op/bev_img_senet']
+    # variables_to_restore = slim.get_variables_to_restore(exclude=exclude)
+    # print("*********variables_to_restore:", variables_to_restore)
+    # saver = tf.train.Saver(variables_to_restore, max_to_keep=max_checkpoints,
+    #                        pad_step_number=True)
     saver = tf.train.Saver(max_to_keep=max_checkpoints,
                            pad_step_number=True)
+    # exclude = ['bev_img_senet', 'train_op/bev_img_senet']
+    # variables_to_restore = slim.get_variables_to_restore(exclude=exclude)
+    # # init_fn = slim.assign_from_checkpoint_fn(filename, variables_to_restore)
+    # # init_fn(self.sess)
 
+################################################################################################
     # Add the result of the train_op to the summary
     tf.summary.scalar("training_loss", train_op)
 
@@ -130,8 +142,13 @@ def train(model, train_config):
         trainer_utils.load_checkpoints(checkpoint_dir,
                                        saver)
         if len(saver.last_checkpoints) > 0:
+            print("*"*50)
+            # sess.run(init)
             checkpoint_to_restore = saver.last_checkpoints[-1]
             saver.restore(sess, checkpoint_to_restore)
+            # init_fn = slim.assign_from_checkpoint_fn(checkpoint_to_restore, variables_to_restore)
+            # init_fn(sess)
+            print("*"*50+"init exclude senet")
         else:
             # Initialize the variables
             sess.run(init)
@@ -176,6 +193,13 @@ def train(model, train_config):
 
             print('Step {}, Total Loss {:0.3f}, Time Elapsed {:0.3f} s'.format(
                 step, train_op_loss, time_elapsed))
+            # senet = sess.graph.get_tensor_by_name('bev_img_senet')
+            # print("senet:", sess.run(senet))
+            # senet_variable_list = [var for var in tf.global_variables() if 'bev_img_senet' in var.name]
+            # print(senet_variable_list, [var.name for var in senet_variable_list])
+            # print("senet:", sess.run(senet_variable_list))
+
+
             train_writer.add_summary(summary_out, step)
 
         else:
