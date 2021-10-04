@@ -225,13 +225,13 @@ def train(model, train_config):
                 step, train_op_loss, time_elapsed))
             # senet = sess.graph.get_tensor_by_name('bev_img_senet')
             # print("senet:", sess.run(senet))
-            senet_variable_list = [var for var in tf.global_variables() if 'bev_img_senet' in var.name]
+            # senet_variable_list = [var for var in tf.global_variables() if 'bev_img_senet' in var.name]
             # senet_out = sess.graph.get_operation_by_name('proposal_roi_fusion/bev_img_senet/softmax/Reshape_1') .outputs[0]
             # bn_mean_var_list = [var for var in tf.global_variables() if ('moving_mean' in var.name) or ('moving_variance' in var.name)]
             # monitor_vars = [var for var in tf.trainable_variables() if 'bev_vgg_pyr/conv3/conv3_2' in var.name]
             # monitor1_vars = [var for var in tf.trainable_variables() if 'img_vgg_pyr/conv3/conv3_2' in var.name]
             # print(senet_variable_list[0:2], [var.name for var in senet_variable_list][0:2])
-            print("senet:", sess.run(senet_variable_list[0:2]))
+            # print("senet:", sess.run(senet_variable_list[0:2]))
             # print("senet_out", sess.run(senet_out, feed_dict=feed_dict), sess.run(senet_out, feed_dict=feed_dict).shape)
             # print("bev_vgg_pyr/conv3/conv3_2", sess.run(monitor_vars))
             # print("img_vgg_pyr/conv3/conv3_2", sess.run(monitor1_vars))

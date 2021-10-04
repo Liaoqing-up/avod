@@ -115,7 +115,7 @@ class RpnModel(model.DetectionModel):
                 self._config.layers_config.img_feature_extractor)
 
         # Feature SENet
-        self._bev_img_SEnet = SeModule(ratio=0.5)
+        # self._bev_img_SEnet = SeModule(ratio=0.5)
 
         # todo add attention for bev and img feature
 
@@ -394,18 +394,18 @@ class RpnModel(model.DetectionModel):
             rpn_fusion_out = None
 
             # todo add senet in roi
-            bev_proposal_rois_weighted, img_proposal_rois_weighted = \
-                self._bev_img_SEnet.build(
-                    bev_proposal_rois,
-                    img_proposal_rois)
+            # bev_proposal_rois_weighted, img_proposal_rois_weighted = \
+            #     self._bev_img_SEnet.build(
+            #         bev_proposal_rois,
+            #         img_proposal_rois)
 
             if self._fusion_method == 'mean':
-                tf_features_sum = tf.add(bev_proposal_rois_weighted, img_proposal_rois_weighted)
+                tf_features_sum = tf.add(bev_proposal_rois, img_proposal_rois)
                 rpn_fusion_out = tf.divide(tf_features_sum,
                                            fusion_mean_div_factor)
             elif self._fusion_method == 'concat':
                 rpn_fusion_out = tf.concat(
-                    [bev_proposal_rois_weighted, img_proposal_rois_weighted], axis=3)
+                    [bev_proposal_rois, img_proposal_rois], axis=3)
             else:
                 raise ValueError('Invalid fusion method', self._fusion_method)
 
