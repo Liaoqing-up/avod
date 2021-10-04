@@ -81,6 +81,33 @@ def train(model, train_config):
             clip_gradient_norm=1.0,
             global_step=global_step_tensor)
 
+    # todo modify freeze optimizer
+    # Optimizer
+    # # train_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='bev_img_senet')
+    # train_vars = [var for var in tf.trainable_variables() if ('bev_img_senet' in var.name) or ('beta' in var.name)]
+    # train_vars = [var for var in tf.trainable_variables() if ('bev_img_senet' in var.name) ]
+    # print(tf.trainable_variables())
+    # # print("****train_vars", train_vars)
+    # # training_optimizer = tf.train.AdamOptimizer(1e-3)
+    # training_optimizer = optimizer_builder.build(
+    #     train_config.optimizer,
+    #     global_summaries,
+    #     global_step_tensor)
+    #
+    # # Create the train op
+    # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    # with tf.variable_scope('train_op'):
+    #     train_op = slim.learning.create_train_op(
+    #         total_loss,
+    #         training_optimizer,
+    #         clip_gradient_norm=1.0,
+    #         global_step=global_step_tensor,
+    #         variables_to_train=train_vars
+    #     )
+    # with tf.variable_scope('train_op'):
+    #     train_op = optimizer.minimize(total_loss, var_list=train_vars)
+
+
     # Save checkpoints regularly.
     #todo modify load weight
     # exclude = ['se_fc1', 'se_fc2']
@@ -91,8 +118,9 @@ def train(model, train_config):
     #                        pad_step_number=True)
     saver = tf.train.Saver(max_to_keep=max_checkpoints,
                            pad_step_number=True)
-    # exclude = ['bev_img_senet', 'train_op/bev_img_senet']
+    # exclude = ['proposal_roi_fusion/bev_img_senet', 'train_op/proposal_roi_fusion/bev_img_senet']
     # variables_to_restore = slim.get_variables_to_restore(exclude=exclude)
+    # print("*********variables_to_restore:", variables_to_restore)
     # # init_fn = slim.assign_from_checkpoint_fn(filename, variables_to_restore)
     # # init_fn(self.sess)
 
@@ -143,12 +171,12 @@ def train(model, train_config):
                                        saver)
         if len(saver.last_checkpoints) > 0:
             print("*"*50)
-            # sess.run(init)
+            sess.run(init)
             checkpoint_to_restore = saver.last_checkpoints[-1]
             saver.restore(sess, checkpoint_to_restore)
             # init_fn = slim.assign_from_checkpoint_fn(checkpoint_to_restore, variables_to_restore)
             # init_fn(sess)
-            print("*"*50+"init exclude senet")
+            # print("*"*50+"init exclude senet")
         else:
             # Initialize the variables
             sess.run(init)
@@ -190,14 +218,24 @@ def train(model, train_config):
 
             train_op_loss, summary_out = sess.run(
                 [train_op, summary_merged], feed_dict=feed_dict)
+            # print("*********train_op",train_op)
+            # print("*****train_op_loss", train_op_loss)
 
             print('Step {}, Total Loss {:0.3f}, Time Elapsed {:0.3f} s'.format(
                 step, train_op_loss, time_elapsed))
             # senet = sess.graph.get_tensor_by_name('bev_img_senet')
             # print("senet:", sess.run(senet))
-            # senet_variable_list = [var for var in tf.global_variables() if 'bev_img_senet' in var.name]
-            # print(senet_variable_list, [var.name for var in senet_variable_list])
-            # print("senet:", sess.run(senet_variable_list))
+            senet_variable_list = [var for var in tf.global_variables() if 'bev_img_senet' in var.name]
+            # senet_out = sess.graph.get_operation_by_name('proposal_roi_fusion/bev_img_senet/softmax/Reshape_1') .outputs[0]
+            # bn_mean_var_list = [var for var in tf.global_variables() if ('moving_mean' in var.name) or ('moving_variance' in var.name)]
+            # monitor_vars = [var for var in tf.trainable_variables() if 'bev_vgg_pyr/conv3/conv3_2' in var.name]
+            # monitor1_vars = [var for var in tf.trainable_variables() if 'img_vgg_pyr/conv3/conv3_2' in var.name]
+            # print(senet_variable_list[0:2], [var.name for var in senet_variable_list][0:2])
+            print("senet:", sess.run(senet_variable_list[0:2]))
+            # print("senet_out", sess.run(senet_out, feed_dict=feed_dict), sess.run(senet_out, feed_dict=feed_dict).shape)
+            # print("bev_vgg_pyr/conv3/conv3_2", sess.run(monitor_vars))
+            # print("img_vgg_pyr/conv3/conv3_2", sess.run(monitor1_vars))
+            # print("bn_mean_var_list", [var.name for var in bn_mean_var_list],  sess.run(bn_mean_var_list))
 
 
             train_writer.add_summary(summary_out, step)

@@ -115,7 +115,7 @@ class RpnModel(model.DetectionModel):
                 self._config.layers_config.img_feature_extractor)
 
         # Feature SENet
-        self._bev_img_SEnet = SeModule(ratio=4)
+        self._bev_img_SEnet = SeModule(ratio=0.5)
 
         # todo add attention for bev and img feature
 
@@ -243,13 +243,13 @@ class RpnModel(model.DetectionModel):
         bottlenecks as member variables.
         """
 
-        self.bev_feature_maps_org, self.bev_end_points = \
+        self.bev_feature_maps, self.bev_end_points = \
             self._bev_feature_extractor.build(
                 self._bev_preprocessed,
                 self._bev_pixel_size,
                 self._is_training)
 
-        self.img_feature_maps_org, self.img_end_points = \
+        self.img_feature_maps, self.img_end_points = \
             self._img_feature_extractor.build(
                 self._img_preprocessed,
                 self._img_pixel_size,
@@ -258,10 +258,10 @@ class RpnModel(model.DetectionModel):
         # todo apply attention for bev and img feature
         # input is bev_feature_maps contacted with img_feature_maps
         # max pooling + fc ?
-        self.bev_feature_maps, self.img_feature_maps = \
-            self._bev_img_SEnet.build(
-                self.bev_feature_maps_org,
-                self.img_feature_maps_org)
+        # self.bev_feature_maps, self.img_feature_maps = \
+        #     self._bev_img_SEnet.build(
+        #         self.bev_feature_maps_org,
+        #         self.img_feature_maps_org)
 
         # with tf.variable_scope('bev_img_senet'):
         #     ratio = 4
@@ -392,13 +392,20 @@ class RpnModel(model.DetectionModel):
 
         with tf.variable_scope('proposal_roi_fusion'):
             rpn_fusion_out = None
+
+            # todo add senet in roi
+            bev_proposal_rois_weighted, img_proposal_rois_weighted = \
+                self._bev_img_SEnet.build(
+                    bev_proposal_rois,
+                    img_proposal_rois)
+
             if self._fusion_method == 'mean':
-                tf_features_sum = tf.add(bev_proposal_rois, img_proposal_rois)
+                tf_features_sum = tf.add(bev_proposal_rois_weighted, img_proposal_rois_weighted)
                 rpn_fusion_out = tf.divide(tf_features_sum,
                                            fusion_mean_div_factor)
             elif self._fusion_method == 'concat':
                 rpn_fusion_out = tf.concat(
-                    [bev_proposal_rois, img_proposal_rois], axis=3)
+                    [bev_proposal_rois_weighted, img_proposal_rois_weighted], axis=3)
             else:
                 raise ValueError('Invalid fusion method', self._fusion_method)
 

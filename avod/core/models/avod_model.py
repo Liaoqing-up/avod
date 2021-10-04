@@ -18,6 +18,9 @@ from avod.core import orientation_encoder
 from avod.core.models.rpn_model import RpnModel
 
 
+from avod.core.feature_extractors.bev_img_senet import SeModule
+
+
 class AvodModel(model.DetectionModel):
     ##############################
     # Keys for Predictions
@@ -119,6 +122,7 @@ class AvodModel(model.DetectionModel):
         self._is_training = (self._train_val_test == 'train')
 
         self.sample_info = {}
+        # self._bev_img_SEnet = SeModule(ratio=4)
 
     def build(self):
         rpn_model = self._rpn_model
@@ -237,6 +241,12 @@ class AvodModel(model.DetectionModel):
                 tf_box_indices,
                 self._proposal_roi_crop_size,
                 name='img_rois')
+
+            # todo add senet in roi
+            # bev_proposal_rois_weighted, img_proposal_rois_weighted = \
+            #     self._bev_img_SEnet.build(
+            #         bev_rois,
+            #         img_rois)
 
         # Fully connected layers (Box Predictor)
         avod_layers_config = self.model_config.layers_config.avod_config
