@@ -19,7 +19,7 @@ from avod.core.models.rpn_model import RpnModel
 
 
 from avod.core.feature_extractors.bev_img_senet import SeModule
-# from avod.core.feature_extractors.bev_img_sam import SamModule
+from avod.core.feature_extractors.bev_img_sam import SamModule
 
 
 class AvodModel(model.DetectionModel):
@@ -124,7 +124,7 @@ class AvodModel(model.DetectionModel):
 
         self.sample_info = {}
         self._bev_img_SEnet = SeModule(ratio=4)
-        # self._bev_img_Sam = SamModule()
+        self._bev_img_Sam = SamModule()
 
     def build(self):
         rpn_model = self._rpn_model
@@ -250,11 +250,11 @@ class AvodModel(model.DetectionModel):
                     bev_rois,
                     img_rois)
 
-            # bev_proposal_rois_spweighted, img_proposal_rois_spweighted =\
-            #     self._bev_img_Sam.build(
-            #         bev_proposal_rois_weighted,
-            #         img_proposal_rois_weighted,
-            #         self._is_training)
+            bev_proposal_rois_spweighted, img_proposal_rois_spweighted =\
+                self._bev_img_Sam.build(
+                    bev_proposal_rois_weighted,
+                    img_proposal_rois_weighted,
+                    self._is_training)
 
 
 
@@ -264,7 +264,7 @@ class AvodModel(model.DetectionModel):
         fc_output_layers = \
             avod_fc_layers_builder.build(
                 layers_config=avod_layers_config,
-                input_rois=[bev_proposal_rois_weighted, img_proposal_rois_weighted],
+                input_rois=[bev_proposal_rois_spweighted, img_proposal_rois_spweighted],
                 input_weights=[bev_mask, img_mask],
                 num_final_classes=self._num_final_classes,
                 box_rep=self._box_rep,
