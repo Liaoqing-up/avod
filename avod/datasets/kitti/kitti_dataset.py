@@ -251,13 +251,14 @@ class KittiDataset:
                 for class_id, classes_name in enumerate(self.classes_name):
                     if self.get_anchors_info(sample_name, classes_name):
                         anchors_info_one_class = list(self.get_anchors_info(sample_name, classes_name))
-                        # if class_id == 1:
-                        #     anchors_info_one_class[0] = int(offset_1) + anchors_info_one_class[0]
-                        # if class_id == 2:
-                        #     anchors_info_one_class[0] = int(offset_1) + int(offset_2) + anchors_info_one_class[0]
+                        if class_id == 1:
+                            anchors_info_one_class[0] = int(offset_1) + anchors_info_one_class[0]
+                        if class_id == 2:
+                            anchors_info_one_class[0] = int(offset_1) + int(offset_2) + anchors_info_one_class[0]
                         anchors_info.append(anchors_info_one_class)
                         # print("shape", np.asarray(self.get_anchors_info(sample_name, classes_name)).shape)
-                        print("classes_name", classes_name, '\n', "class_anchors_info", len(anchors_info_one_class[1]), anchors_info_one_class)
+                        print("classes_name", classes_name, '\n', "class_anchors_info", len(anchors_info_one_class[1]),
+                              anchors_info_one_class, self.get_anchors_info(sample_name, classes_name))
                 print("anchors_info", anchors_info)
                 merge_anchor_info = []
                 if anchors_info:
