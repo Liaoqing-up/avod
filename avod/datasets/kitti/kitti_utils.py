@@ -36,6 +36,7 @@ class KittiUtils(object):
         self.area_extents = np.reshape(self.config.area_extents, (3, 2))
         self.bev_extents = self.area_extents[[0, 2]]
         self.voxel_size = self.config.voxel_size
+        print("self.config.anchor_strides", self.config.anchor_strides)
         self.anchor_strides = np.reshape(self.config.anchor_strides, (-1, 2))
 
         self.bev_generator = bev_generator_builder.build(

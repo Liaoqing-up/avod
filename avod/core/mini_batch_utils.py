@@ -110,7 +110,8 @@ class MiniBatchUtils:
                 sample_name is None
         """
         # Round values for nicer folder names
-        anchor_strides = np.round(anchor_strides[:, 0], 3)
+        # anchor_strides = np.round(anchor_strides[:, 0], 3)
+        anchor_strides = np.round(anchor_strides[0:1, 0], 3)
 
         anchor_strides_str = \
             ' '.join(str(stride) for stride in anchor_strides)

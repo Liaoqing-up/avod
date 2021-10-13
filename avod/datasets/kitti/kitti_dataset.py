@@ -15,6 +15,8 @@ from avod.core import constants
 from avod.datasets.kitti import kitti_aug
 from avod.datasets.kitti.kitti_utils import KittiUtils
 
+offset_1 = 89600
+offset_2 = 44800
 
 class Sample:
     def __init__(self, name, augs):
@@ -176,7 +178,8 @@ class KittiDataset:
             if self.classes == ['Pedestrian', 'Cyclist']:
                 self.classes_name = 'People'
             elif self.classes == ['Car', 'Pedestrian', 'Cyclist']:
-                self.classes_name = 'All'
+                # self.classes_name = 'All'
+                self.classes_name = ['Car', 'Pedestrian', 'Cyclist']
             else:
                 raise NotImplementedError('Need new unique identifier for '
                                           'multiple classes')
@@ -200,9 +203,9 @@ class KittiDataset:
     def get_cluster_info(self):
         return self.kitti_utils.clusters, self.kitti_utils.std_devs
 
-    def get_anchors_info(self, sample_name):
+    def get_anchors_info(self, sample_name, classes_name):
         return self.kitti_utils.get_anchors_info(
-            self.classes_name,
+            classes_name,
             self.kitti_utils.anchor_strides,
             sample_name)
 
@@ -241,10 +244,39 @@ class KittiDataset:
             sample = self.sample_list[sample_idx]
             sample_name = sample.name
 
+            anchors_info = []
             # Only read labels if they exist
             if self.has_labels:
                 # Read mini batch first to see if it is empty
-                anchors_info = self.get_anchors_info(sample_name)
+                for class_id, classes_name in enumerate(self.classes_name):
+                    if self.get_anchors_info(sample_name, classes_name):
+                        anchors_info_one_class = list(self.get_anchors_info(sample_name, classes_name))
+                        # if class_id == 1:
+                        #     anchors_info_one_class[0] = int(offset_1) + anchors_info_one_class[0]
+                        # if class_id == 2:
+                        #     anchors_info_one_class[0] = int(offset_1) + int(offset_2) + anchors_info_one_class[0]
+                        anchors_info.append(anchors_info_one_class)
+                        # print("shape", np.asarray(self.get_anchors_info(sample_name, classes_name)).shape)
+                        print("classes_name", classes_name, '\n', "class_anchors_info", len(anchors_info_one_class[1]), anchors_info_one_class)
+                print("anchors_info", anchors_info)
+                merge_anchor_info = []
+                if anchors_info:
+                    for i in range(len(anchors_info[0])):
+                        if i == 3:
+                            merge_anchor_info.append(np.concatenate([x[i] for x in anchors_info], axis=0))
+                        else:
+                            merge_anchor_info.append(np.concatenate([x[i] for x in anchors_info]))
+                    anchors_info = tuple(merge_anchor_info)
+                print("merge anchors_info", anchors_info, len(anchors_info[0]))
+                # anchors_info = np.asarray(anchors_info)
+                # print("anchors_info", anchors_info)
+                # for i in range(anchors_info.shape[1]):
+                #     if i == 3:
+                #         anchors_info[0, i] = np.vstack(anchors_info[:, i])
+                #     else:
+                #         anchors_info[0, i] = np.hstack(anchors_info[:, i])
+                # anchors_info = tuple(anchors_info[0, i])
+                # print("merge anchors_info", anchors_info, len(anchors_info[0]))
 
                 if (not anchors_info) and self.train_val_test == 'train' \
                         and (not self.train_on_all_samples):
