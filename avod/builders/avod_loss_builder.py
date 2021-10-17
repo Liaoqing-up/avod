@@ -277,8 +277,8 @@ def _build_cls_off_ang_loss(model, prediction_dict):
     mb_angle_vectors = prediction_dict[model.PRED_MB_ANGLE_VECTORS]
 
     # Ground Truth
-    mb_cls_gt = prediction_dict[model.PRED_MB_CLASSIFICATIONS_GT]
-    mb_offsets_gt = prediction_dict[model.PRED_MB_OFFSETS_GT]
+    mb_cls_gt = prediction_dict[model.PRED_MB_CLASSIFICATIONS_GT]       # multi classes
+    mb_offsets_gt = prediction_dict[model.PRED_MB_OFFSETS_GT]           # offset for rpn
     mb_orientations_gt = prediction_dict[model.PRED_MB_ORIENTATIONS_GT]
 
     # Decode ground truth orientations

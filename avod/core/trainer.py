@@ -223,6 +223,7 @@ def train(model, train_config):
 
             print('Step {}, Total Loss {:0.3f}, Time Elapsed {:0.3f} s'.format(
                 step, train_op_loss, time_elapsed))
+            # print(sess.run(prediction_dict))
             # senet = sess.graph.get_tensor_by_name('bev_img_senet')
             # print("senet:", sess.run(senet))
             # senet_variable_list = [var for var in tf.global_variables() if 'bev_img_senet' in var.name]

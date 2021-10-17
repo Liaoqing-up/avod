@@ -730,6 +730,7 @@ class RpnModel(model.DetectionModel):
         # Network input data
         image_input = sample.get(constants.KEY_IMAGE_INPUT)
         bev_input = sample.get(constants.KEY_BEV_INPUT)
+        self.pointcloud = sample.get(constants.KEY_POINT_CLOUD)
 
         # Image shape (h, w)
         image_shape = [image_input.shape[0], image_input.shape[1]]
@@ -738,7 +739,7 @@ class RpnModel(model.DetectionModel):
         stereo_calib_p2 = sample.get(constants.KEY_STEREO_CALIB_P2)
 
         # Fill the placeholders for anchor information
-        print("to feed ", anchors_info)
+        # print("to feed ", anchors_info)
         self._fill_anchor_pl_inputs(anchors_info=anchors_info,
                                     ground_plane=ground_plane,
                                     image_shape=image_shape,
@@ -863,10 +864,10 @@ class RpnModel(model.DetectionModel):
         anchor_boxes_3d_to_use = np.asarray(anchor_boxes_3d_to_use)
         anchors_ious = np.squeeze(np.asarray(anchors_ious))
         anchor_offsets = np.asarray(anchor_offsets)
-        anchor_classes = np.squeeze(np.asarray(anchor_classes))
-        print("anchor_classes", anchor_classes.shape, anchor_classes)
-        print("anchors_ious", anchors_ious.shape, anchors_ious)
-        print("anchor_offsets", anchor_offsets.shape, anchor_offsets)
+        anchor_classes = np.squeeze(np.asarray(anchor_classes))     # only 0/1 for background/foreground
+        print("feed anchor_classes", anchor_classes.shape, anchor_classes)
+        print("feed anchors_ious", anchors_ious.shape, anchors_ious)
+        print("feed anchor_offsets", anchor_offsets.shape, anchor_offsets)
 
         # Flip anchors and centroid x offsets for augmented samples
         if kitti_aug.AUG_FLIPPING in sample_augs:

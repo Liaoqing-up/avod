@@ -304,3 +304,43 @@ def project_to_image_tensor(points_3d, cam_p2_matrix):
                                  axis=0)
 
     return stacked_points_2d
+
+
+def filter_pointcloud(anchors, pointcloud):
+    """Filter pointcloud in anchors
+
+        Args:
+        anchors: a tensor of anchors in the shape [N, 6].
+            The anchors are in the format [x, y, z, dim_x, dim_y, dim_z]
+        pointcloud: (3, N) point_cloud in the form [[x,...][y,...][z,...]]
+    """
+    pointcloud_list = []
+    for anchor in anchors:
+        x = anchor[0]
+        y = anchors[1]
+        z = anchors[2]
+
+        dim_x = anchors[3]
+        dim_y = anchors[4]
+        dim_z = anchors[5]
+
+        dim_x_half = dim_x / 2.
+        dim_z_half = dim_z / 2.
+        pointcloud_mask = (pointcloud[0, :] > x - dim_x_half) & (pointcloud[0, :] < x + dim_x_half) &\
+                          (pointcloud[2, :] > z - dim_z_half) & (pointcloud[2, :] < z + dim_z_half) & \
+                          (pointcloud[1, :] < y) & (pointcloud[1, :] > y - dim_y)
+        pointcloud = pointcloud[pointcloud_mask]
+        print(pointcloud.shape)
+        #todo need sample to a fix point_num, can it be transfer to np_array and feed to pointnet by parallel
+        pointcloud_list.append(pointcloud)
+    pointcloud_list = np.asarray(pointcloud_list)
+
+
+def render_bev_img_feature(points_filter_patch, bev_feature_maps, img_feature_maps):
+    """
+        Args:
+        points_filter_patch: (3, N) point_cloud in the form [[x,...][y,...][z,...]]
+
+    """
+    # todo need render the pointcloud with bev and img feature
+    pass

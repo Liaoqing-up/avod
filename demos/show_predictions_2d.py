@@ -52,14 +52,19 @@ def main():
     rpn_score_threshold = 0.1
     avod_score_threshold = 0.1
 
-    gt_classes = ['Car']
+    # gt_classes = ['Car']
     # gt_classes = ['Pedestrian', 'Cyclist']
+    gt_classes = ['Car', 'Pedestrian', 'Cyclist']
 
     # Overwrite this to select a specific checkpoint
     global_step = None
+    global_step = 150000
+    global_step = 276000
     # checkpoint_name = 'avod_cars_example'
-    checkpoint_name = 'pyramid_cars_with_aug_example'
+    # checkpoint_name = 'pyramid_cars_with_aug_example'
     # checkpoint_name = 'pyramid_cars_with_aug_example_senet'
+    checkpoint_name = 'pyramid_cars_with_aug_example_3classes'
+    # checkpoint_name = 'pyramid_cars_with_aug_example_senet_second_sam_3classes'
 
     # Drawing Toggles
     draw_proposals_separate = False
@@ -203,7 +208,7 @@ def main():
                 predictions_and_scores_dir +
                 "/{}/{}.txt".format(global_step,
                                     sample_name))
-
+            # print("predictions_and_scores", predictions_and_scores[:, -2:])
             prediction_boxes_3d = predictions_and_scores[:, 0:7]
             prediction_scores = predictions_and_scores[:, 7]
             prediction_class_indices = predictions_and_scores[:, 8]
@@ -214,6 +219,9 @@ def main():
 
                 # Apply score mask
                 avod_score_mask = prediction_scores >= avod_score_threshold
+                # print("prediction_scores", prediction_scores)
+                # print("avod_score_mask", avod_score_mask)
+                # print("scores and label and mask", np.hstack((predictions_and_scores[:, -2:], np.expand_dims(avod_score_mask,1))))
                 prediction_boxes_3d = prediction_boxes_3d[avod_score_mask]
                 prediction_scores = prediction_scores[avod_score_mask]
                 prediction_class_indices = \
@@ -308,6 +316,7 @@ def main():
                 final_prediction_boxes_3d = prediction_boxes_3d[image_filter]
                 final_scores = prediction_scores[image_filter]
                 final_class_indices = prediction_class_indices[image_filter]
+                print("\nfinal_boxes_2d and class", np.hstack((final_boxes_2d, np.expand_dims(final_class_indices, axis=1))))
 
                 num_of_predictions = final_boxes_2d.shape[0]
 
@@ -320,6 +329,7 @@ def main():
                     obj.score = score
             else:
                 if save_empty_images:
+                    print("empty!")
                     pred_fig, pred_2d_axes, pred_3d_axes = \
                         vis_utils.visualization(dataset.rgb_image_dir,
                                                 img_idx,
@@ -371,6 +381,7 @@ def main():
                                      draw_iou,
                                      gt_classes,
                                      draw_orientations_on_pred)
+                    print("draw_2dpredictions\n")
                 else:
                     pred_fig, pred_3d_axes = \
                         vis_utils.visualize_single_plot(
@@ -404,6 +415,7 @@ def draw_proposals(filtered_gt_objs,
                    draw_orientations_on_prop):
     # Draw filtered ground truth boxes
     for obj in filtered_gt_objs:
+        print("draw_gt_obt", obj)
         # Draw 2D boxes
         vis_utils.draw_box_2d(
             prop_2d_axes, obj, test_mode=True, color_tm='r')
@@ -473,6 +485,7 @@ def draw_predictions(filtered_gt_objs,
         if draw_iou:
             gt_box_2d = [obj.x1, obj.y1, obj.x2, obj.y2]
             gt_boxes.append(gt_box_2d)
+        print("gt_box_2d", gt_box_2d)
 
     if gt_boxes:
         # the two_2 eval function expects np.array

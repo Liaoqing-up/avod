@@ -257,8 +257,8 @@ class KittiDataset:
                             anchors_info_one_class[0] = int(offset_1) + int(offset_2) + anchors_info_one_class[0]
                         anchors_info.append(anchors_info_one_class)
                         # print("shape", np.asarray(self.get_anchors_info(sample_name, classes_name)).shape)
-                        print("classes_name", classes_name, '\n', "class_anchors_info", len(anchors_info_one_class[1]),
-                              anchors_info_one_class, self.get_anchors_info(sample_name, classes_name))
+                        # print("classes_name", classes_name, '\n', "class_anchors_info", len(anchors_info_one_class[1]),
+                        #       anchors_info_one_class, self.get_anchors_info(sample_name, classes_name))
                 print("anchors_info", anchors_info)
                 merge_anchor_info = []
                 if anchors_info:
@@ -268,7 +268,7 @@ class KittiDataset:
                         else:
                             merge_anchor_info.append(np.concatenate([x[i] for x in anchors_info]))
                     anchors_info = tuple(merge_anchor_info)
-                print("merge anchors_info", anchors_info, len(anchors_info[0]))
+                # print("merge anchors_info", anchors_info, len(anchors_info[0]))
                 # anchors_info = np.asarray(anchors_info)
                 # print("anchors_info", anchors_info)
                 # for i in range(anchors_info.shape[1]):

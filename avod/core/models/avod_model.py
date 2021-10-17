@@ -18,8 +18,8 @@ from avod.core import orientation_encoder
 from avod.core.models.rpn_model import RpnModel
 
 
-from avod.core.feature_extractors.bev_img_senet import SeModule
-from avod.core.feature_extractors.bev_img_sam import SamModule
+# from avod.core.feature_extractors.bev_img_senet import SeModule
+# from avod.core.feature_extractors.bev_img_sam import SamModule
 
 
 class AvodModel(model.DetectionModel):
@@ -123,8 +123,8 @@ class AvodModel(model.DetectionModel):
         self._is_training = (self._train_val_test == 'train')
 
         self.sample_info = {}
-        self._bev_img_SEnet = SeModule(ratio=4)
-        self._bev_img_Sam = SamModule()
+        # self._bev_img_SEnet = SeModule(ratio=4)
+        # self._bev_img_Sam = SamModule()
 
     def build(self):
         rpn_model = self._rpn_model
@@ -161,6 +161,7 @@ class AvodModel(model.DetectionModel):
 
             else:
                 avod_projection_in = top_anchors
+
 
             with tf.variable_scope('bev'):
                 # Project top anchors into bev and image spaces
@@ -212,6 +213,9 @@ class AvodModel(model.DetectionModel):
             bev_mask = tf.constant(1.0)
             img_mask = tf.constant(1.0)
 
+        # points_filter_patch = anchor_projector.filter_pointcloud(avod_projection_in, self._rpn_model.pointcloud)
+        # pc_augment = anchor_projector.render_bev_img_feature(points_filter_patch, bev_feature_maps, img_feature_maps)
+
         # ROI Pooling
         with tf.variable_scope('avod_roi_pooling'):
             def get_box_indices(boxes):
@@ -244,17 +248,17 @@ class AvodModel(model.DetectionModel):
                 self._proposal_roi_crop_size,
                 name='img_rois')
 
-            # todo add senet in roi
-            bev_proposal_rois_weighted, img_proposal_rois_weighted = \
-                self._bev_img_SEnet.build(
-                    bev_rois,
-                    img_rois)
-
-            bev_proposal_rois_spweighted, img_proposal_rois_spweighted =\
-                self._bev_img_Sam.build(
-                    bev_proposal_rois_weighted,
-                    img_proposal_rois_weighted,
-                    self._is_training)
+            # # todo add senet in roi
+            # bev_proposal_rois_weighted, img_proposal_rois_weighted = \
+            #     self._bev_img_SEnet.build(
+            #         bev_rois,
+            #         img_rois)
+            #
+            # bev_proposal_rois_spweighted, img_proposal_rois_spweighted =\
+            #     self._bev_img_Sam.build(
+            #         bev_proposal_rois_weighted,
+            #         img_proposal_rois_weighted,
+            #         self._is_training)
 
 
 
@@ -264,7 +268,7 @@ class AvodModel(model.DetectionModel):
         fc_output_layers = \
             avod_fc_layers_builder.build(
                 layers_config=avod_layers_config,
-                input_rois=[bev_proposal_rois_spweighted, img_proposal_rois_spweighted],
+                input_rois=[bev_rois, img_rois],
                 input_weights=[bev_mask, img_mask],
                 num_final_classes=self._num_final_classes,
                 box_rep=self._box_rep,
@@ -310,11 +314,14 @@ class AvodModel(model.DetectionModel):
             anchor_box_list_gt = box_list.BoxList(bev_anchor_boxes_gt_tf_order)
             anchor_box_list = box_list.BoxList(bev_proposal_boxes_tf_order)
 
+        # mb_mask: the sample of all anchor
+        # mb_class_label_indices: the mb_anchor belongs to the ith class
+        # mb_gt_indices: the mb_anchor belongs to the ith gt anchor
         mb_mask, mb_class_label_indices, mb_gt_indices = \
-            self.sample_mini_batch(
+            self.sample_mini_batch(                         # compute ious between top anchors and anchor_gt, then assign labels for the max iou class, pick [0,1,2,3]
                 anchor_box_list_gt=anchor_box_list_gt,
-                anchor_box_list=anchor_box_list,
-                class_labels=class_labels)
+                anchor_box_list=anchor_box_list,            # rpn top anchors
+                class_labels=class_labels)                  # class_label only 0/1 for back/fore ground
 
         # Create classification one_hot vector
         with tf.variable_scope('avod_one_hot_classes'):
@@ -349,7 +356,7 @@ class AvodModel(model.DetectionModel):
 
             if self._box_rep == 'box_3d':
                 # Gather corresponding ground truth anchors for each mb sample
-                mb_anchors_gt = tf.gather(anchors_gt, mb_gt_indices)
+                mb_anchors_gt = tf.gather(anchors_gt, mb_gt_indices)        #
                 mb_offsets_gt = anchor_encoder.tf_anchor_to_offset(
                     mb_anchors, mb_anchors_gt)
 
@@ -390,7 +397,7 @@ class AvodModel(model.DetectionModel):
 
                 # Convert gt boxes_3d -> box_4c
                 mb_boxes_3d_gt = tf.gather(boxes_3d_gt, mb_gt_indices)
-                mb_boxes_4c_gt = box_4c_encoder.tf_box_3d_to_box_4c(
+                mb_boxes_4c_gt = box_4c_encoder.tf_box_3d_to_box_4c(        # log (w2/w) = log w2 - log w
                     mb_boxes_3d_gt, ground_plane)
 
                 # Convert proposals: anchors -> box_3d -> box_4c
@@ -401,8 +408,8 @@ class AvodModel(model.DetectionModel):
                                                        ground_plane)
 
                 # Get mini batch
-                mb_boxes_4c = tf.boolean_mask(proposal_boxes_4c, mb_mask)
-                mb_offsets_gt = box_4c_encoder.tf_box_4c_to_offsets(
+                mb_boxes_4c = tf.boolean_mask(proposal_boxes_4c, mb_mask)       # log (w1/w) = log w1 - log w
+                mb_offsets_gt = box_4c_encoder.tf_box_4c_to_offsets(            # log (w2/w1) = log w2 - log w1 = log (w2/w) - log (w1/w)
                     mb_boxes_4c, mb_boxes_4c_gt)
 
                 if self._box_rep == 'box_4ca':
@@ -669,6 +676,7 @@ class AvodModel(model.DetectionModel):
                 mb_pos_mask, mb_mask, max_iou_indices, class_labels)
 
             mb_gt_indices = tf.boolean_mask(max_iou_indices, mb_mask)
+            print("mb_class_label_indices", mb_class_label_indices)
 
         return mb_mask, mb_class_label_indices, mb_gt_indices
 
@@ -679,6 +687,7 @@ class AvodModel(model.DetectionModel):
 
     def loss(self, prediction_dict):
         # Note: The loss should be using mini-batch values only
+        print("prediction_dict", prediction_dict)
         loss_dict, rpn_loss = self._rpn_model.loss(prediction_dict)
         losses_output = avod_loss_builder.build(self, prediction_dict)
 
