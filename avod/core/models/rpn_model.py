@@ -812,7 +812,7 @@ class RpnModel(model.DetectionModel):
                 print("class_idx", grid_anchor_boxes_3d.shape)
                 all_anchor_boxes_3d.append(grid_anchor_boxes_3d)
             all_anchor_boxes_3d = np.concatenate(all_anchor_boxes_3d)
-            print("***all_anchor_boxes_3d", all_anchor_boxes_3d.shape, all_anchor_boxes_3d)
+            # print("***all_anchor_boxes_3d", all_anchor_boxes_3d.shape, all_anchor_boxes_3d)
         else:
             # Don't loop for a single class
             class_idx = 0
@@ -865,9 +865,9 @@ class RpnModel(model.DetectionModel):
         anchors_ious = np.squeeze(np.asarray(anchors_ious))
         anchor_offsets = np.asarray(anchor_offsets)
         anchor_classes = np.squeeze(np.asarray(anchor_classes))     # only 0/1 for background/foreground
-        print("feed anchor_classes", anchor_classes.shape, anchor_classes)
-        print("feed anchors_ious", anchors_ious.shape, anchors_ious)
-        print("feed anchor_offsets", anchor_offsets.shape, anchor_offsets)
+        # print("feed anchor_classes", anchor_classes.shape, anchor_classes)
+        # print("feed anchors_ious", anchors_ious.shape, anchors_ious)
+        # print("feed anchor_offsets", anchor_offsets.shape, anchor_offsets)
 
         # Flip anchors and centroid x offsets for augmented samples
         if kitti_aug.AUG_FLIPPING in sample_augs:

@@ -20,6 +20,9 @@ message FeatureExtractor {
 
         PyramidLayersConfig img_vgg_pyr = 3;
         PyramidLayersConfig bev_vgg_pyr = 4;
+
+        ResPyramidLayersConfig img_res_pyr = 5;
+        ResPyramidLayersConfig bev_res_pyr = 6;
     }
 }
 
@@ -55,6 +58,23 @@ message PyramidLayersConfig {
 
     // Conv layer 4 [repeat, num filter]
     repeated int32 vgg_conv4 = 4;
+
+    // L2 norm weight decay
+    optional float l2_weight_decay = 6 [default = 0.0005];
+}
+
+message ResPyramidLayersConfig {
+    // Conv layer 1 [repeat, num filter]
+    repeated int32 res_conv1 = 1;
+
+    // Conv layer 2 [repeat, num filter]
+    repeated int32 res_conv2 = 2;
+
+    // Conv layer 3 [repeat, num filter]
+    repeated int32 res_conv3 = 3;
+
+    // Conv layer 4 [repeat, num filter]
+    repeated int32 res_conv4 = 4;
 
     // L2 norm weight decay
     optional float l2_weight_decay = 6 [default = 0.0005];

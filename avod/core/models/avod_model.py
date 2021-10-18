@@ -18,8 +18,8 @@ from avod.core import orientation_encoder
 from avod.core.models.rpn_model import RpnModel
 
 
-# from avod.core.feature_extractors.bev_img_senet import SeModule
-# from avod.core.feature_extractors.bev_img_sam import SamModule
+from avod.core.feature_extractors.bev_img_senet import SeModule
+from avod.core.feature_extractors.bev_img_sam import SamModule
 
 
 class AvodModel(model.DetectionModel):
@@ -123,8 +123,8 @@ class AvodModel(model.DetectionModel):
         self._is_training = (self._train_val_test == 'train')
 
         self.sample_info = {}
-        # self._bev_img_SEnet = SeModule(ratio=4)
-        # self._bev_img_Sam = SamModule()
+        self._bev_img_SEnet = SeModule(ratio=4)
+        self._bev_img_Sam = SamModule()
 
     def build(self):
         rpn_model = self._rpn_model
@@ -248,17 +248,17 @@ class AvodModel(model.DetectionModel):
                 self._proposal_roi_crop_size,
                 name='img_rois')
 
-            # # todo add senet in roi
-            # bev_proposal_rois_weighted, img_proposal_rois_weighted = \
-            #     self._bev_img_SEnet.build(
-            #         bev_rois,
-            #         img_rois)
-            #
-            # bev_proposal_rois_spweighted, img_proposal_rois_spweighted =\
-            #     self._bev_img_Sam.build(
-            #         bev_proposal_rois_weighted,
-            #         img_proposal_rois_weighted,
-            #         self._is_training)
+            # todo add senet in roi
+            bev_proposal_rois_weighted, img_proposal_rois_weighted = \
+                self._bev_img_SEnet.build(
+                    bev_rois,
+                    img_rois)
+
+            bev_proposal_rois_spweighted, img_proposal_rois_spweighted =\
+                self._bev_img_Sam.build(
+                    bev_proposal_rois_weighted,
+                    img_proposal_rois_weighted,
+                    self._is_training)
 
 
 
@@ -268,7 +268,7 @@ class AvodModel(model.DetectionModel):
         fc_output_layers = \
             avod_fc_layers_builder.build(
                 layers_config=avod_layers_config,
-                input_rois=[bev_rois, img_rois],
+                input_rois=[bev_proposal_rois_spweighted, img_proposal_rois_spweighted],
                 input_weights=[bev_mask, img_mask],
                 num_final_classes=self._num_final_classes,
                 box_rep=self._box_rep,
@@ -317,6 +317,7 @@ class AvodModel(model.DetectionModel):
         # mb_mask: the sample of all anchor
         # mb_class_label_indices: the mb_anchor belongs to the ith class
         # mb_gt_indices: the mb_anchor belongs to the ith gt anchor
+        # todo: if anchor in anchor_box_list is labeled positive in mini-batch, give the same gt_indices, else if neg, compute the new gt_indices
         mb_mask, mb_class_label_indices, mb_gt_indices = \
             self.sample_mini_batch(                         # compute ious between top anchors and anchor_gt, then assign labels for the max iou class, pick [0,1,2,3]
                 anchor_box_list_gt=anchor_box_list_gt,
@@ -687,7 +688,7 @@ class AvodModel(model.DetectionModel):
 
     def loss(self, prediction_dict):
         # Note: The loss should be using mini-batch values only
-        print("prediction_dict", prediction_dict)
+        # print("prediction_dict", prediction_dict)
         loss_dict, rpn_loss = self._rpn_model.loss(prediction_dict)
         losses_output = avod_loss_builder.build(self, prediction_dict)
 

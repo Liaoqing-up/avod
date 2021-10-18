@@ -448,6 +448,7 @@ class Evaluator:
                                 self.eval_wait_interval)
             else:
                 for ckpt_idx in range(num_checkpoints):
+
                     checkpoint_to_restore = \
                         self._saver.last_checkpoints[ckpt_idx]
                     ckpt_id = evaluator_utils.strip_checkpoint_id(
