@@ -412,12 +412,15 @@ class RpnModel(model.DetectionModel):
 
             # img_proposal_rois = tf.zeros(bev_proposal_rois.get_shape(),dtype=tf.float32)
             print("*tf.shape(bev_proposal_rois)",bev_proposal_rois.get_shape())
-            img_proposal_rois = np.zeros(shape=[512,3,3,1])
+            # img_proposal_rois = np.zeros(shape=[512,3,3,1])
+            img_proposal_rois = []
+            level_index = []
             for level, img_proposal_feature_input in img_proposal_input.items():
                 print("*img_proposal_feature_input", img_proposal_feature_input)
                 print("*self._img_anchors_level", tf.squeeze((self._img_anchors_level),axis=-1))
                 level_ind = tf.reshape(tf.where(tf.squeeze((self._img_anchors_level),axis=-1) == int(level[-1])),[-1])
                 print("*level_ind", level_ind)
+                level_index.append(level_ind)
                 print("$"*10, tf.gather_nd(self._img_anchors_norm_pl, level_ind))
 
                 img_proposal_roi = tf.image.crop_and_resize(
@@ -426,8 +429,13 @@ class RpnModel(model.DetectionModel):
                     tf_box_indices,
                     self._proposal_roi_crop_size)
                 print("*img_proposal_roi",img_proposal_roi)
-                img_proposal_rois[level_ind] = img_proposal_roi
+                img_proposal_rois.append(img_proposal_roi)
+                # img_proposal_rois[level_ind] = img_proposal_roi
             # img_proposal_rois = tf.convert_to_tensor(img_proposal_roi,dtype=tf.float32)
+            img_proposal_rois = tf.concat(img_proposal_rois, axis=0)
+            level_index = tf.concat(level_index)
+            index = [tf.where(tf.equal(level_index, i)) for i in range(level_index.get_shape())]
+            img_proposal_rois = tf.gather(img_proposal_rois, index, axis=0)
 
             # img_proposal_rois = tf.image.crop_and_resize(
             #     img_proposal_input,
