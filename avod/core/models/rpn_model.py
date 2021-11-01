@@ -29,7 +29,7 @@ class RpnModel(model.DetectionModel):
     PL_BEV_ANCHORS_NORM = 'bev_anchors_norm_pl'
     PL_IMG_ANCHORS = 'img_anchors_pl'
     PL_IMG_ANCHORS_NORM = 'img_anchors_norm_pl'
-    PL_IMG_ANCHOR_LEVEL = 'img_anchors_level'
+    # PL_IMG_ANCHOR_LEVEL = 'img_anchors_level'
     PL_LABEL_ANCHORS = 'label_anchors_pl'
     PL_LABEL_BOXES_3D = 'label_boxes_3d_pl'
     PL_LABEL_CLASSES = 'label_classes_pl'
@@ -229,8 +229,8 @@ class RpnModel(model.DetectionModel):
                                       self.PL_IMG_ANCHORS)
                 self._img_anchors_norm_pl = self._add_placeholder(
                     tf.float32, [None, 4], self.PL_IMG_ANCHORS_NORM)
-                self._img_anchors_level = self._add_placeholder(
-                    tf.int32, [None, 1], self.PL_IMG_ANCHOR_LEVEL)
+                # self._img_anchors_level = self._add_placeholder(
+                #     tf.int32, [None, 1], self.PL_IMG_ANCHOR_LEVEL)
 
             with tf.variable_scope('sample_info'):
                 # the calib matrix shape is (3 x 4)
@@ -303,26 +303,26 @@ class RpnModel(model.DetectionModel):
                 normalizer_params={
                     'is_training': self._is_training})
 
-        with tf.variable_scope('img_bottleneck'):
-            self.img_bottlenecks = dict()
-            for level, img_feature_map in self.img_feature_maps.items():
-                self.img_bottleneck = slim.conv2d(
-                    img_feature_map,
-                    1, [1, 1],
-                    scope='bottleneck'+'_'+str(level),
-                    normalizer_fn=slim.batch_norm,
-                    normalizer_params={
-                        'is_training': self._is_training})
-                self.img_bottlenecks['level_'+str(level)] = self.img_bottleneck
-
         # with tf.variable_scope('img_bottleneck'):
-        #     self.img_bottleneck = slim.conv2d(
-        #         self.img_feature_maps,
-        #         1, [1, 1],
-        #         scope='bottleneck',
-        #         normalizer_fn=slim.batch_norm,
-        #         normalizer_params={
-        #             'is_training': self._is_training})
+        #     self.img_bottlenecks = dict()
+        #     for level, img_feature_map in self.img_feature_maps.items():
+        #         self.img_bottleneck = slim.conv2d(
+        #             img_feature_map,
+        #             1, [1, 1],
+        #             scope='bottleneck'+'_'+str(level),
+        #             normalizer_fn=slim.batch_norm,
+        #             normalizer_params={
+        #                 'is_training': self._is_training})
+        #         self.img_bottlenecks['level_'+str(level)] = self.img_bottleneck
+
+        with tf.variable_scope('img_bottleneck'):
+            self.img_bottleneck = slim.conv2d(
+                self.img_feature_maps,
+                1, [1, 1],
+                scope='bottleneck',
+                normalizer_fn=slim.batch_norm,
+                normalizer_params={
+                    'is_training': self._is_training})
 
         # Visualize the end point feature maps being used
         for feature_map in list(self.bev_end_points.items()):
@@ -344,8 +344,8 @@ class RpnModel(model.DetectionModel):
         self._set_up_feature_extractors()
 
         bev_proposal_input = self.bev_bottleneck
-        img_proposal_input = self.img_bottlenecks
-        # img_proposal_input = self.img_bottleneck
+        # img_proposal_input = self.img_bottlenecks
+        img_proposal_input = self.img_bottleneck
 
         fusion_mean_div_factor = 2.0
 
@@ -366,12 +366,12 @@ class RpnModel(model.DetectionModel):
 
                 bev_proposal_input = tf.multiply(bev_proposal_input,
                                                  bev_mask)
-                # img_proposal_input = tf.multiply(img_proposal_input,
-                #                                  img_mask)
+                img_proposal_input = tf.multiply(img_proposal_input,
+                                                 img_mask)
 
-                for key, img_proposal_input_single in img_proposal_input.items():
-                    img_proposal_input[key] = tf.multiply(img_proposal_input_single,
-                                                          img_mask)
+                # for key, img_proposal_input_single in img_proposal_input.items():
+                #     img_proposal_input[key] = tf.multiply(img_proposal_input_single,
+                #                                           img_mask)
 
                 self.img_path_drop_mask = img_mask
                 self.bev_path_drop_mask = bev_mask
@@ -408,40 +408,40 @@ class RpnModel(model.DetectionModel):
             #todo apply different level for different anchor_depth
             #todo get depth from bev box center or from anchor index
 
-            # img_feature_level = dict()
+            # # img_feature_level = dict()
+            #
+            # # img_proposal_rois = tf.zeros(bev_proposal_rois.get_shape(),dtype=tf.float32)
+            # print("*tf.shape(bev_proposal_rois)",bev_proposal_rois.get_shape())
+            # # img_proposal_rois = np.zeros(shape=[512,3,3,1])
+            # img_proposal_rois = []
+            # level_index = []
+            # for level, img_proposal_feature_input in img_proposal_input.items():
+            #     print("*img_proposal_feature_input", img_proposal_feature_input)
+            #     print("*self._img_anchors_level", tf.squeeze((self._img_anchors_level),axis=-1))
+            #     level_ind = tf.reshape(tf.where(tf.squeeze((self._img_anchors_level),axis=-1) == int(level[-1])),[-1])
+            #     print("*level_ind", level_ind)
+            #     level_index.append(level_ind)
+            #     print("$"*10, tf.gather_nd(self._img_anchors_norm_pl, level_ind))
+            #
+            #     img_proposal_roi = tf.image.crop_and_resize(
+            #         img_proposal_feature_input,
+            #         tf.gather_nd(self._img_anchors_norm_pl, level_ind),
+            #         tf_box_indices,
+            #         self._proposal_roi_crop_size)
+            #     print("*img_proposal_roi",img_proposal_roi)
+            #     img_proposal_rois.append(img_proposal_roi)
+            #     # img_proposal_rois[level_ind] = img_proposal_roi
+            # # img_proposal_rois = tf.convert_to_tensor(img_proposal_roi,dtype=tf.float32)
+            # img_proposal_rois = tf.concat(img_proposal_rois, axis=0)
+            # level_index = tf.concat(level_index)
+            # index = [tf.where(tf.equal(level_index, i)) for i in range(level_index.get_shape())]
+            # img_proposal_rois = tf.gather(img_proposal_rois, index, axis=0)
 
-            # img_proposal_rois = tf.zeros(bev_proposal_rois.get_shape(),dtype=tf.float32)
-            print("*tf.shape(bev_proposal_rois)",bev_proposal_rois.get_shape())
-            # img_proposal_rois = np.zeros(shape=[512,3,3,1])
-            img_proposal_rois = []
-            level_index = []
-            for level, img_proposal_feature_input in img_proposal_input.items():
-                print("*img_proposal_feature_input", img_proposal_feature_input)
-                print("*self._img_anchors_level", tf.squeeze((self._img_anchors_level),axis=-1))
-                level_ind = tf.reshape(tf.where(tf.squeeze((self._img_anchors_level),axis=-1) == int(level[-1])),[-1])
-                print("*level_ind", level_ind)
-                level_index.append(level_ind)
-                print("$"*10, tf.gather_nd(self._img_anchors_norm_pl, level_ind))
-
-                img_proposal_roi = tf.image.crop_and_resize(
-                    img_proposal_feature_input,
-                    tf.gather_nd(self._img_anchors_norm_pl, level_ind),
-                    tf_box_indices,
-                    self._proposal_roi_crop_size)
-                print("*img_proposal_roi",img_proposal_roi)
-                img_proposal_rois.append(img_proposal_roi)
-                # img_proposal_rois[level_ind] = img_proposal_roi
-            # img_proposal_rois = tf.convert_to_tensor(img_proposal_roi,dtype=tf.float32)
-            img_proposal_rois = tf.concat(img_proposal_rois, axis=0)
-            level_index = tf.concat(level_index)
-            index = [tf.where(tf.equal(level_index, i)) for i in range(level_index.get_shape())]
-            img_proposal_rois = tf.gather(img_proposal_rois, index, axis=0)
-
-            # img_proposal_rois = tf.image.crop_and_resize(
-            #     img_proposal_input,
-            #     self._img_anchors_norm_pl,
-            #     tf_box_indices,
-            #     self._proposal_roi_crop_size)
+            img_proposal_rois = tf.image.crop_and_resize(
+                img_proposal_input,
+                self._img_anchors_norm_pl,
+                tf_box_indices,
+                self._proposal_roi_crop_size)
 
         with tf.variable_scope('proposal_roi_fusion'):
             rpn_fusion_out = None
@@ -934,29 +934,29 @@ class RpnModel(model.DetectionModel):
             anchor_boxes_3d_to_use)
         num_anchors = len(anchors_to_use)
 
-        print("&"*10, "anchors_to_use", anchors_to_use)
+        # print("&"*10, "anchors_to_use", anchors_to_use)
         # Project anchors into bev
         # bev is reverse by z xis, the faster the near
         bev_anchors, bev_anchors_norm = anchor_projector.project_to_bev(
             anchors_to_use, self._bev_extents)
-        print("&" * 10, "bev_anchors", bev_anchors.shape, bev_anchors)
-        print("&" * 10, "bev_anchors_norm", bev_anchors_norm)
-        anchor_depth = anchors_to_use[:,2]
-        # img fpn level: 0,1,2,3
-        print("&"*10, "anchor_depth", anchor_depth)
-        anchor_level = np.zeros(anchor_depth.shape)
-        anchor_level[anchor_depth <= 20] = 3
-        anchor_level[np.logical_and(20<anchor_depth,anchor_depth<=40)] = 2
-        anchor_level[np.logical_and(40<anchor_depth,anchor_depth<=60)] = 1
-
-        # print("&" * 10, "bev_anchors", bev_anchors)
-        print("&" * 10, "anchor_level", anchor_level)
-        # Project box_3d anchors into image space
+        # print("&" * 10, "bev_anchors", bev_anchors.shape, bev_anchors)
+        # print("&" * 10, "bev_anchors_norm", bev_anchors_norm)
+        # anchor_depth = anchors_to_use[:,2]
+        # # img fpn level: 0,1,2,3
+        # print("&"*10, "anchor_depth", anchor_depth)
+        # anchor_level = np.zeros(anchor_depth.shape)
+        # anchor_level[anchor_depth <= 20] = 3
+        # anchor_level[np.logical_and(20<anchor_depth,anchor_depth<=40)] = 2
+        # anchor_level[np.logical_and(40<anchor_depth,anchor_depth<=60)] = 1
+        #
+        # # print("&" * 10, "bev_anchors", bev_anchors)
+        # print("&" * 10, "anchor_level", anchor_level)
+        # # Project box_3d anchors into image space
         img_anchors, img_anchors_norm = \
             anchor_projector.project_to_image_space(
                 anchors_to_use, stereo_calib_p2, image_shape)
-        print("&" * 10, "img_anchors", img_anchors.shape, img_anchors)
-        print("&" * 10, "img_anchors_norm", img_anchors_norm)
+        # print("&" * 10, "img_anchors", img_anchors.shape, img_anchors)
+        # print("&" * 10, "img_anchors_norm", img_anchors_norm)
 
         # Reorder into [y1, x1, y2, x2] for tf.crop_and_resize op
         self._bev_anchors_norm = bev_anchors_norm[:, [1, 0, 3, 2]]
@@ -994,7 +994,7 @@ class RpnModel(model.DetectionModel):
         self._placeholder_inputs[self.PL_IMG_ANCHORS] = img_anchors
         self._placeholder_inputs[self.PL_IMG_ANCHORS_NORM] = \
             self._img_anchors_norm
-        self._placeholder_inputs[self.PL_IMG_ANCHOR_LEVEL] = anchor_level
+        # self._placeholder_inputs[self.PL_IMG_ANCHOR_LEVEL] = anchor_level
 
     def loss(self, prediction_dict):
 

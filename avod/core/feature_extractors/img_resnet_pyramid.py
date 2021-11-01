@@ -177,12 +177,12 @@ class ImgResPyr(img_feature_extractor.ImgFeatureExtractor):
                             'is_training': is_training},
                         scope='pyramid_fusion1')
 
-                # feature_maps_out = pyramid_fusion1
-                feature_maps_out = dict()
-                feature_maps_out[self.LEVEL_0] = pyramid_fusion1
-                feature_maps_out[self.LEVEL_1] = pyramid_fusion_2
-                feature_maps_out[self.LEVEL_2] = pyramid_fusion_3
-                feature_maps_out[self.LEVEL_3] = block4_2
+                feature_maps_out = pyramid_fusion1
+                # feature_maps_out = dict()
+                # feature_maps_out[self.LEVEL_0] = pyramid_fusion1
+                # feature_maps_out[self.LEVEL_1] = pyramid_fusion_2
+                # feature_maps_out[self.LEVEL_2] = pyramid_fusion_3
+                # feature_maps_out[self.LEVEL_3] = block4_2
 
 
                 # Convert end_points_collection into a end_point dict.
