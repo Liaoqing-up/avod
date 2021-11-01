@@ -171,5 +171,38 @@ class WeightedSoftmaxLoss(Loss):
         per_row_cross_ent = (tf.nn.softmax_cross_entropy_with_logits(
             labels=tf.reshape(target_tensor, [-1, num_classes]),
             logits=tf.reshape(prediction_tensor, [-1, num_classes])))
+        # print("per_row_cross_ent", per_row_cross_ent)
+        # print("tf.reduce_sum(per_row_cross_ent) * weight", tf.reduce_sum(per_row_cross_ent) * weight)
 
         return tf.reduce_sum(per_row_cross_ent) * weight
+
+
+class WeightedFocalLoss(Loss):
+    """Focal cross-entropy loss function."""
+
+    def _compute_loss(self, prediction_tensor, target_tensor, weight):
+        """Compute loss function.
+        Args:
+          prediction_tensor: A float tensor of shape [batch_size, num_anchors,
+            num_classes] representing the predicted logits for each class
+          target_tensor: A float tensor of shape [batch_size, num_anchors,
+            num_classes] representing one-hot encoded classification targets
+        Returns:
+          loss: a (scalar) tensor representing the value of the loss function
+        """
+        num_classes = prediction_tensor.get_shape().as_list()[-1]
+        objectness_softmax = tf.nn.softmax(prediction_tensor)
+        weight_fl = (tf.reduce_sum(tf.multiply(target_tensor, tf.pow(tf.subtract(target_tensor, objectness_softmax), 2)), axis=-1))
+        per_row_cross_ent = (tf.nn.softmax_cross_entropy_with_logits(
+            labels=tf.reshape(target_tensor, [-1, num_classes]),
+            logits=tf.reshape(prediction_tensor, [-1, num_classes])))
+        per_row_focal_loss = tf.multiply(weight_fl, per_row_cross_ent)
+        # print("num_classes", num_classes)
+        # print("objectness_softmax", objectness_softmax)
+        # print("target_tensor", target_tensor)
+        # print("weight_fl", weight_fl)
+        # print("per_row_cross_ent", per_row_cross_ent)
+        # print("per_row_focal_loss", per_row_focal_loss)
+        # print("tf.reduce_sum(per_row_focal_loss) * weight", tf.reduce_sum(per_row_focal_loss) * weight)
+
+        return tf.reduce_sum(per_row_focal_loss) * weight

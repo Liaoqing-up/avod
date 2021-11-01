@@ -58,13 +58,14 @@ def main():
 
     # Overwrite this to select a specific checkpoint
     global_step = None
-    global_step = 150000
-    global_step = 276000
+    # global_step = 150000
+    # global_step = 225000
     # checkpoint_name = 'avod_cars_example'
     # checkpoint_name = 'pyramid_cars_with_aug_example'
     # checkpoint_name = 'pyramid_cars_with_aug_example_senet'
-    checkpoint_name = 'pyramid_cars_with_aug_example_3classes'
+    # checkpoint_name = 'pyramid_cars_with_aug_example_3classes'
     # checkpoint_name = 'pyramid_cars_with_aug_example_senet_second_sam_3classes'
+    checkpoint_name = 'pyramid_cars_with_aug_example_senet_second_sam_resnet_3classes'
 
     # Drawing Toggles
     draw_proposals_separate = False

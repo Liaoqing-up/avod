@@ -179,6 +179,15 @@ class AvodModel(model.DetectionModel):
                         bev_proposal_boxes_norm)
 
             with tf.variable_scope('img'):
+                proposal_depth = avod_projection_in[:,2]
+                # img fpn level: 0,1,2,3
+                print("&" * 10, "proposal_depth", proposal_depth)
+                proposal_level = np.zeros(proposal_depth.shape)
+                proposal_level[proposal_depth <= 20] = 3
+                proposal_level[np.logical_and(20 < proposal_depth, proposal_depth <= 40)] = 2
+                proposal_level[np.logical_and(40 < proposal_depth, proposal_depth <= 60)] = 1
+                print("&" * 10, "proposal_level", proposal_level)
+
                 image_shape = tf.cast(tf.shape(
                     rpn_model.placeholders[RpnModel.PL_IMG_INPUT])[0:2],
                     tf.float32)
@@ -204,11 +213,16 @@ class AvodModel(model.DetectionModel):
                 img_mask = rpn_model.img_path_drop_mask
                 bev_mask = rpn_model.bev_path_drop_mask
 
-                img_feature_maps = tf.multiply(img_feature_maps,
-                                               img_mask)
+                # img_feature_maps = tf.multiply(img_feature_maps,
+                #                                img_mask)
 
                 bev_feature_maps = tf.multiply(bev_feature_maps,
                                                bev_mask)
+
+                for key, img_featuremap_input_single in img_feature_maps.items():
+                    img_feature_maps[key] = tf.multiply(img_featuremap_input_single,
+                                                          img_mask)
+
         else:
             bev_mask = tf.constant(1.0)
             img_mask = tf.constant(1.0)
@@ -241,14 +255,26 @@ class AvodModel(model.DetectionModel):
                 self._proposal_roi_crop_size,
                 name='bev_rois')
             # Do ROI Pooling on image
-            img_rois = tf.image.crop_and_resize(
-                img_feature_maps,
-                img_proposal_boxes_norm_tf_order,
-                tf_box_indices,
-                self._proposal_roi_crop_size,
-                name='img_rois')
+            # todo assign different level for proposal in image
+            # shunxu hui da luan
+            img_rois = tf.zeros(tf.shape(bev_rois),dtype=tf.float32)
+            for level, img_feature_input in img_feature_maps.items():
+                level_ind = np.where(proposal_level == int(level[-1]))
+                img_proposal_roi = tf.image.crop_and_resize(
+                    img_feature_input,
+                    img_proposal_boxes_norm_tf_order[level_ind],
+                    tf_box_indices,
+                    self._proposal_roi_crop_size,
+                    name='img_rois')
+                img_rois[level_ind] = img_proposal_roi
 
-            # todo add senet in roi
+            # img_rois = tf.image.crop_and_resize(
+            #     img_feature_maps,
+            #     img_proposal_boxes_norm_tf_order,
+            #     tf_box_indices,
+            #     self._proposal_roi_crop_size,
+            #     name='img_rois')
+
             bev_proposal_rois_weighted, img_proposal_rois_weighted = \
                 self._bev_img_SEnet.build(
                     bev_rois,

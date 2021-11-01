@@ -259,7 +259,7 @@ class KittiDataset:
                         # print("shape", np.asarray(self.get_anchors_info(sample_name, classes_name)).shape)
                         # print("classes_name", classes_name, '\n', "class_anchors_info", len(anchors_info_one_class[1]),
                         #       anchors_info_one_class, self.get_anchors_info(sample_name, classes_name))
-                print("anchors_info", anchors_info)
+                #print("anchors_info", anchors_info)
                 merge_anchor_info = []
                 if anchors_info:
                     for i in range(len(anchors_info[0])):
