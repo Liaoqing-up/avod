@@ -116,7 +116,7 @@ class ImgResPyr(img_feature_extractor.ImgFeatureExtractor):
                     # Decoder (upsample and fuse features)
                     pyramid_level3 = slim.conv2d(
                         block4_2,
-                        64,
+                        res_config.res_conv1[1],
                         [1, 1],
                         normalizer_fn=slim.batch_norm,
                         normalizer_params={
@@ -145,7 +145,7 @@ class ImgResPyr(img_feature_extractor.ImgFeatureExtractor):
                         scope='pyramid_fusion3')
                     pyramid_level2 = slim.conv2d(
                         pyramid_fusion_3,
-                        64,
+                        res_config.res_conv1[1],
                         [1, 1],
                         normalizer_fn=slim.batch_norm,
                         normalizer_params={
@@ -174,7 +174,7 @@ class ImgResPyr(img_feature_extractor.ImgFeatureExtractor):
                         scope='pyramid_fusion2')
                     pyramid_level1 = slim.conv2d(
                         pyramid_fusion_2,
-                        64,
+                        res_config.res_conv1[1],
                         [1, 1],
                         normalizer_fn=slim.batch_norm,
                         normalizer_params={
@@ -204,7 +204,7 @@ class ImgResPyr(img_feature_extractor.ImgFeatureExtractor):
                         scope='pyramid_fusion1')
                     pyramid_level0 = slim.conv2d(
                         pyramid_fusion1,
-                        64,
+                        res_config.res_conv1[1],
                         [1, 1],
                         normalizer_fn=slim.batch_norm,
                         normalizer_params={

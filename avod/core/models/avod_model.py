@@ -304,13 +304,14 @@ class AvodModel(model.DetectionModel):
             img_rois = []
             level_inds = []
             for level, img_feature_input in img_feature_maps.items():
-                level_ind = tf.reshape(tf.where(tf.equal(proposal_level, int(level[-1]))),[-1])
+                level_ind = tf.where(tf.equal(proposal_level, int(level[-1])))
                 print("level_ind", level_ind)
-
+                tf_box_indices = get_box_indices(tf.expand_dims(
+                    tf.gather_nd(img_proposal_boxes_norm_tf_order, level_ind), axis=0))
                 # level_ind = np.where(proposal_level == int(level[-1]))
                 img_proposal_roi = tf.image.crop_and_resize(
                     img_feature_input,
-                    tf.gather(img_proposal_boxes_norm_tf_order, level_ind),
+                    tf.gather_nd(img_proposal_boxes_norm_tf_order, level_ind),
                     tf_box_indices,
                     self._proposal_roi_crop_size,
                     name='img_rois')

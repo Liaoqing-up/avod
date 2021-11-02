@@ -12,7 +12,9 @@ def main():
     # results_file = '/opt/sdatmp/lq/project/gitproject/avod/scripts/offline_eval/results/pyramid_cars_with_aug_example_3classes_results_0.1.txt'
     # results_file = '/opt/sdatmp/lq/project/gitproject/avod/scripts/offline_eval/results/pyramid_cars_with_aug_example_senet_second_sam_3classes_results_0.1.txt'
     # results_file = '/opt/sdatmp/lq/project/gitproject/avod/scripts/offline_eval/results/pyramid_cars_with_aug_example_senet_second_sam_resnet_3classes_results_0.1.txt'
-    results_file = '/opt/sdatmp/lq/project/gitproject/avod/scripts/offline_eval/results/pyramid_cars_with_aug_example_resnet_3classes_results_0.1.txt'
+    # results_file = '/opt/sdatmp/lq/project/gitproject/avod/scripts/offline_eval/results/pyramid_cars_with_aug_example_senet_second_sam_resnet_multi_focalloss_3classes_results_0.1.txt'
+    results_file = '/opt/sdatmp/lq/project/gitproject/avod/scripts/offline_eval/results/pyramid_cars_with_aug_example_senet_second_sam_resnet_channel32_3classes_results_0.1.txt'
+#    results_file = '/opt/sdatmp/lq/project/gitproject/avod/scripts/offline_eval/results/pyramid_cars_with_aug_example_resnet_3classes_results_0.1.txt'
 
     # Top n medium score indices to print
     top_n_to_print = 5
