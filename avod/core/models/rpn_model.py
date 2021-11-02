@@ -230,7 +230,7 @@ class RpnModel(model.DetectionModel):
                 self._img_anchors_norm_pl = self._add_placeholder(
                     tf.float32, [None, 4], self.PL_IMG_ANCHORS_NORM)
                 self._img_anchors_level = self._add_placeholder(
-                    tf.int32, [None, 1], self.PL_IMG_ANCHOR_LEVEL)
+                    tf.int32, [None], self.PL_IMG_ANCHOR_LEVEL)
 
             with tf.variable_scope('sample_info'):
                 # the calib matrix shape is (3 x 4)
@@ -417,8 +417,8 @@ class RpnModel(model.DetectionModel):
             level_index = []
             for level, img_proposal_feature_input in img_proposal_input.items():
                 print("*img_proposal_feature_input", img_proposal_feature_input)
-                print("*self._img_anchors_level", tf.squeeze((self._img_anchors_level),axis=-1))
-                level_ind = tf.reshape(tf.where(tf.squeeze((self._img_anchors_level),axis=-1) == int(level[-1])),[-1])
+                print("*self._img_anchors_level", self._img_anchors_level)
+                level_ind = tf.reshape(tf.where(tf.equal(self._img_anchors_level, int(level[-1]))),[-1])
                 print("*level_ind", level_ind)
                 level_index.append(level_ind)
                 print("$"*10, tf.gather_nd(self._img_anchors_norm_pl, level_ind))
@@ -433,9 +433,20 @@ class RpnModel(model.DetectionModel):
                 # img_proposal_rois[level_ind] = img_proposal_roi
             # img_proposal_rois = tf.convert_to_tensor(img_proposal_roi,dtype=tf.float32)
             img_proposal_rois = tf.concat(img_proposal_rois, axis=0)
-            level_index = tf.concat(level_index)
-            index = [tf.where(tf.equal(level_index, i)) for i in range(level_index.get_shape())]
-            img_proposal_rois = tf.gather(img_proposal_rois, index, axis=0)
+            print("**img_proposal_roi", img_proposal_roi)
+            level_index = tf.cast(tf.concat(level_index, axis=0), dtype=tf.int32)
+            print("**level_index", level_index)
+            # ______________________________________________________________________________
+            # feature_index = tf.argsort(level_index, direction='ASCENDING')
+            # print("**feature_index",feature_index)
+            # img_proposal_rois = tf.gather(img_proposal_rois, feature_index, axis=0)
+            # ______________________________________________________________________________
+            img_proposal_rois = tf.scatter_nd(level_index, img_proposal_rois, tf.shape(img_proposal_rois))
+            # img_proposal_rois_ref = tf.scatter_nd_update(img_proposal_rois_ref, level_index, img_proposal_rois)
+            # print("***img_proposal_rois_ref", img_proposal_rois_ref)
+            # img_proposal_rois = img_proposal_rois_ref
+            print("***img_proposal_roi", img_proposal_roi)
+
 
             # img_proposal_rois = tf.image.crop_and_resize(
             #     img_proposal_input,
@@ -948,6 +959,7 @@ class RpnModel(model.DetectionModel):
         anchor_level[anchor_depth <= 20] = 3
         anchor_level[np.logical_and(20<anchor_depth,anchor_depth<=40)] = 2
         anchor_level[np.logical_and(40<anchor_depth,anchor_depth<=60)] = 1
+        anchor_level[anchor_depth > 60] = 0
 
         # print("&" * 10, "bev_anchors", bev_anchors)
         print("&" * 10, "anchor_level", anchor_level)

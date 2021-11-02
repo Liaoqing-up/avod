@@ -179,14 +179,58 @@ class AvodModel(model.DetectionModel):
                         bev_proposal_boxes_norm)
 
             with tf.variable_scope('img'):
+                indexes_list = []
+                value_list = []
                 proposal_depth = avod_projection_in[:,2]
                 # img fpn level: 0,1,2,3
                 print("&" * 10, "proposal_depth", proposal_depth)
-                proposal_level = np.zeros(proposal_depth.shape)
-                proposal_level[proposal_depth <= 20] = 3
-                proposal_level[np.logical_and(20 < proposal_depth, proposal_depth <= 40)] = 2
-                proposal_level[np.logical_and(40 < proposal_depth, proposal_depth <= 60)] = 1
+                # proposal_level = tf.Variable(proposal_depth)
+                # proposal_level = np.zeros(proposal_depth.shape)
+                print("proposal_depth <= 20", proposal_depth <= 20)
+                # mask = tf.greater_equal(proposal_depth,2)
+
+                mask = tf.logical_and(tf.greater(proposal_depth, 40), tf.less_equal(proposal_depth, 60))
+                print("mask", mask)
+                indexes = tf.squeeze(tf.cast(tf.where(mask), dtype=tf.int32),axis=-1)
+                print("indexes", indexes)
+                print("tf.ones_like(indexes)", tf.ones_like(indexes))
+                indexes_list.append(indexes)
+                value_list.append(tf.ones_like(indexes))
+
+                mask = tf.logical_and(tf.greater(proposal_depth, 20), tf.less_equal(proposal_depth, 40))
+                indexes = tf.squeeze(tf.cast(tf.where(mask), dtype=tf.int32), axis=-1)
+                indexes_list.append(indexes)
+                value_list.append(tf.ones_like(indexes)+1)
+
+                mask = tf.less_equal(proposal_depth, 20)
+                indexes = tf.squeeze(tf.cast(tf.where(mask), dtype=tf.int32), axis=-1)
+                indexes_list.append(indexes)
+                value_list.append(tf.ones_like(indexes)+2)
+
+                mask = tf.greater(proposal_depth, 60)
+                indexes = tf.squeeze(tf.cast(tf.where(mask), dtype=tf.int32), axis=-1)
+                indexes_list.append(indexes)
+                value_list.append(tf.zeros_like(indexes))
+
+                index = tf.concat(indexes_list,axis=0)
+                value = tf.concat(value_list,axis=0)
+                print("index", index)
+                print("value", value)
+                proposal_level = tf.scatter_nd(index, value, tf.shape(proposal_depth))
+
+                # proposal_level = tf.scatter_nd(indexes, tf.constant(2),tf.shape(proposal_depth))
+                # proposal_level = tf.scatter_nd_update(proposal_level, indexes, tf.constant(2))
                 print("&" * 10, "proposal_level", proposal_level)
+
+                #_________________________________________________________________________________________
+                # proposal_level[proposal_depth <= 20].assign(3)
+                # proposal_level[np.logical_and(20 < proposal_depth, proposal_depth <= 40)].assign(2)
+                # proposal_level[np.logical_and(40 < proposal_depth, proposal_depth <= 60)].assign(1)
+
+                # proposal_level[proposal_depth <= 20] = 3
+                # proposal_level[np.logical_and(20 < proposal_depth, proposal_depth <= 40)] = 2
+                # proposal_level[np.logical_and(40 < proposal_depth, proposal_depth <= 60)] = 1
+                # print("&" * 10, "proposal_level", proposal_level)
 
                 image_shape = tf.cast(tf.shape(
                     rpn_model.placeholders[RpnModel.PL_IMG_INPUT])[0:2],
@@ -256,17 +300,35 @@ class AvodModel(model.DetectionModel):
                 name='bev_rois')
             # Do ROI Pooling on image
             # todo assign different level for proposal in image
-            # shunxu hui da luan
-            img_rois = tf.zeros(tf.shape(bev_rois),dtype=tf.float32)
+            # img_rois = tf.zeros(tf.shape(bev_rois),dtype=tf.float32)
+            img_rois = []
+            level_inds = []
             for level, img_feature_input in img_feature_maps.items():
-                level_ind = np.where(proposal_level == int(level[-1]))
+                level_ind = tf.reshape(tf.where(tf.equal(proposal_level, int(level[-1]))),[-1])
+                print("level_ind", level_ind)
+
+                # level_ind = np.where(proposal_level == int(level[-1]))
                 img_proposal_roi = tf.image.crop_and_resize(
                     img_feature_input,
-                    img_proposal_boxes_norm_tf_order[level_ind],
+                    tf.gather(img_proposal_boxes_norm_tf_order, level_ind),
                     tf_box_indices,
                     self._proposal_roi_crop_size,
                     name='img_rois')
-                img_rois[level_ind] = img_proposal_roi
+                level_inds.append(level_ind)
+                img_rois.append(img_proposal_roi)
+            img_rois = tf.concat(img_rois, axis=0)
+            level_inds = tf.cast(tf.concat(level_inds, axis=0), dtype=tf.int32)
+            img_rois = tf.scatter_nd(level_inds, img_rois, tf.shape(img_rois))
+            print("img_rois", img_rois)
+
+
+                # img_proposal_roi = tf.image.crop_and_resize(
+                #     img_feature_input,
+                #     img_proposal_boxes_norm_tf_order[level_ind],
+                #     tf_box_indices,
+                #     self._proposal_roi_crop_size,
+                #     name='img_rois')
+                # img_rois[level_ind] = img_proposal_roi
 
             # img_rois = tf.image.crop_and_resize(
             #     img_feature_maps,
@@ -703,7 +765,7 @@ class AvodModel(model.DetectionModel):
                 mb_pos_mask, mb_mask, max_iou_indices, class_labels)
 
             mb_gt_indices = tf.boolean_mask(max_iou_indices, mb_mask)
-            print("mb_class_label_indices", mb_class_label_indices)
+            # print("mb_class_label_indices", mb_class_label_indices)
 
         return mb_mask, mb_class_label_indices, mb_gt_indices
 

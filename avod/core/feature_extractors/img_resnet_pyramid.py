@@ -114,6 +114,15 @@ class ImgResPyr(img_feature_extractor.ImgFeatureExtractor):
                     block4_2 = self.bottleneck(block4_1, res_config.res_conv4[1], is_training, scope='block4_2')
 
                     # Decoder (upsample and fuse features)
+                    pyramid_level3 = slim.conv2d(
+                        block4_2,
+                        64,
+                        [1, 1],
+                        normalizer_fn=slim.batch_norm,
+                        normalizer_params={
+                            'is_training': is_training},
+                        scope='pyramid_level3')
+
                     upconv3 = slim.conv2d_transpose(  # 90*300*256
                         block4_2,
                         res_config.res_conv3[1],
@@ -134,6 +143,14 @@ class ImgResPyr(img_feature_extractor.ImgFeatureExtractor):
                         normalizer_params={
                             'is_training': is_training},
                         scope='pyramid_fusion3')
+                    pyramid_level2 = slim.conv2d(
+                        pyramid_fusion_3,
+                        64,
+                        [1, 1],
+                        normalizer_fn=slim.batch_norm,
+                        normalizer_params={
+                            'is_training': is_training},
+                        scope='pyramid_level2')
 
                     upconv2 = slim.conv2d_transpose(  # 180*600*128
                         pyramid_fusion_3,
@@ -155,6 +172,15 @@ class ImgResPyr(img_feature_extractor.ImgFeatureExtractor):
                         normalizer_params={
                             'is_training': is_training},
                         scope='pyramid_fusion2')
+                    pyramid_level1 = slim.conv2d(
+                        pyramid_fusion_2,
+                        64,
+                        [1, 1],
+                        normalizer_fn=slim.batch_norm,
+                        normalizer_params={
+                            'is_training': is_training},
+                        scope='pyramid_level1')
+
 
                     upconv1 = slim.conv2d_transpose(  # 360*1200*64
                         pyramid_fusion_2,
@@ -176,13 +202,25 @@ class ImgResPyr(img_feature_extractor.ImgFeatureExtractor):
                         normalizer_params={
                             'is_training': is_training},
                         scope='pyramid_fusion1')
+                    pyramid_level0 = slim.conv2d(
+                        pyramid_fusion1,
+                        64,
+                        [1, 1],
+                        normalizer_fn=slim.batch_norm,
+                        normalizer_params={
+                            'is_training': is_training},
+                        scope='pyramid_level0')
 
                 # feature_maps_out = pyramid_fusion1
                 feature_maps_out = dict()
-                feature_maps_out[self.LEVEL_0] = pyramid_fusion1
-                feature_maps_out[self.LEVEL_1] = pyramid_fusion_2
-                feature_maps_out[self.LEVEL_2] = pyramid_fusion_3
-                feature_maps_out[self.LEVEL_3] = block4_2
+                feature_maps_out[self.LEVEL_0] = pyramid_level0
+                feature_maps_out[self.LEVEL_1] = pyramid_level1
+                feature_maps_out[self.LEVEL_2] = pyramid_level2
+                feature_maps_out[self.LEVEL_3] = pyramid_level3
+                # feature_maps_out[self.LEVEL_0] = pyramid_fusion1
+                # feature_maps_out[self.LEVEL_1] = pyramid_fusion_2
+                # feature_maps_out[self.LEVEL_2] = pyramid_fusion_3
+                # feature_maps_out[self.LEVEL_3] = block4_2
 
 
                 # Convert end_points_collection into a end_point dict.
