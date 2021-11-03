@@ -49,8 +49,10 @@ def _get_cls_loss(model, cls_logits, cls_gt):
     """
 
     # Cross-entropy loss for classification
+    # weighted_softmax_classification_loss = \
+    #     losses.WeightedSoftmaxLoss()
     weighted_softmax_classification_loss = \
-        losses.WeightedSoftmaxLoss()
+        losses.WeightedFocalLoss()
     cls_loss_weight = model._config.loss_config.cls_loss_weight
     cls_loss = weighted_softmax_classification_loss(
         cls_logits, cls_gt, weight=cls_loss_weight)

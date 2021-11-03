@@ -940,7 +940,8 @@ class RpnModel(model.DetectionModel):
 
         with tf.variable_scope('rpn_losses'):
             with tf.variable_scope('objectness'):
-                cls_loss = losses.WeightedSoftmaxLoss()
+                # cls_loss = losses.WeightedSoftmaxLoss()
+                cls_loss = losses.WeightedFocalLoss()
                 cls_loss_weight = self._config.loss_config.cls_loss_weight
                 objectness_loss = cls_loss(objectness,
                                            objectness_gt,
